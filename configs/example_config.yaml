@@ -1,0 +1,24 @@
+model:
+  name: DeepSpatiotemporalGPNN
+  num_layers: 2
+  hidden_dim: 1000
+  bottleneck_dim: 128
+  output_dim: 1
+  spatial_layer_type: Matern
+  temporal_layer_type: Matern
+bayesian_optimization:
+  n_iterations: 10
+  initial_samples: 15
+  bounds:
+    - [0.1, 10]  # spatial_lengthscale
+    - [0.1, 10]  # temporal_lengthscale
+    - [0.1, 1]   # amplitude
+  observation_noise_bounds: [0.008, 0.01]
+uq_method:
+  type: 'deep_ensemble'  # Options: 'deep_ensemble', 'mc_dropout'....
+training:
+  num_epochs: 10
+  batch_size: 1024
+  learning_rate: 0.001
+  num_models: 10
+device: 'cuda:0'

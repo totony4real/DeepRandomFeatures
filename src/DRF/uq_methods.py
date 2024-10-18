@@ -28,6 +28,27 @@ class DeepEnsemble:
         self.num_models = num_models
         self.device = device
         self.num_epochs = num_epochs
+    
+    def map_loss(outputs, targets, model_parameters, s_squared):
+        """
+        Computes the Maximum A Posteriori (MAP) loss, which is a combination of the mean squared error (MSE) and 
+        a regularization term on the model parameters (L2 regularization).
+
+        Args:
+            outputs (torch.Tensor): The predicted outputs from the model.
+            targets (torch.Tensor): The ground truth target values.
+            model_parameters (iterable): An iterable (e.g., a list) of the model's parameters (weights).
+            s_squared (float): A scaling factor for the regularization term (variance term in MAP).
+
+        Returns:
+            torch.Tensor: The total MAP loss, which is the sum of the MSE and the regularization term.
+        """
+        mse_term = ((outputs - targets) ** 2).sum()
+
+        reg_term = sum(param.pow(2).sum() for param in model_parameters) / (2 * s_squared)
+
+        total_loss = mse_term + reg_term*(2*1e-2**2)
+        return total_loss
 
     def train_and_evaluate(self, spatial_lengthscale, temporal_lengthscale, amplitude, train_loader, val_loader, spatial_X_test, temporal_X_test):
         """
@@ -87,8 +108,9 @@ class DeepEnsemble:
                 temporal_input = temporal_input.to(self.device)
                 targets = targets.to(self.device)
                 optimizer.zero_grad()
+                s_squared = amplitude**2
                 outputs = model(spatial_input, temporal_input)
-                loss = criterion(outputs, targets.unsqueeze(1))
+                loss = self.map_loss(outputs, targets.unsqueeze(1), model.parameters(), s_squared)
                 loss.backward()
                 optimizer.step()
                 train_loader_tqdm.set_postfix(loss=loss.item())
@@ -124,3 +146,4 @@ class DeepEnsemble:
 
         final_preds = torch.cat(final_preds, dim=0)
         return torch.cat(predictions).unsqueeze(0), final_preds
+

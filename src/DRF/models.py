@@ -3,6 +3,7 @@ import torch.nn as nn
 from DRF import get_layer
 from DRF.layers import MaternRandomPhaseS2RFFLayer, MaternRFFLayer
 
+
 class SpatiotemporalModelBase(nn.Module):
     """
     A base class for spatiotemporal models, which defines a structure for models that
@@ -105,17 +106,25 @@ class DeepSpatiotemporalGPNN(SpatiotemporalModelBase):
         temporal_lengthscale (float): Lengthscale parameter for temporal layers.
         layer_kwargs (dict): Additional arguments for layer initialization.
         combine_type (str, optional): Method for combining spatial and temporal features.
+        device (str, optional): Device to run the model on. Defaults to 'cuda'.
     """
     
-    def __init__(self, num_layers, spatial_input_dim, temporal_input_dim, hidden_dim, bottleneck_dim, output_dim, spatial_rff_layer_type, temporal_rff_layer_type, spatial_lengthscale, temporal_lengthscale, layer_kwargs, combine_type='concat'):
+    def __init__(self, num_layers, spatial_input_dim, temporal_input_dim, hidden_dim, bottleneck_dim, output_dim,
+                 spatial_rff_layer_type, temporal_rff_layer_type,
+                 spatial_lengthscale, temporal_lengthscale, layer_kwargs, combine_type='concat', device='cuda'):
         super().__init__(num_layers, spatial_input_dim, temporal_input_dim, hidden_dim, bottleneck_dim, output_dim, combine_type)
-        
+        self.device = device
+
         for i in range(num_layers):
-            layer_args = (spatial_input_dim if i == 0 else bottleneck_dim, hidden_dim, bottleneck_dim)
+            if i == 0:
+                layer_args = (spatial_input_dim, hidden_dim, bottleneck_dim)
+            else:
+                layer_args = (bottleneck_dim + spatial_input_dim, hidden_dim, bottleneck_dim)
             spatial_layer = get_layer(spatial_rff_layer_type, *layer_args, lengthscale=spatial_lengthscale, **layer_kwargs)
             self.spatial_layers.append(spatial_layer)
 
-        temporal_layer = get_layer(temporal_rff_layer_type, temporal_input_dim, hidden_dim, bottleneck_dim, lengthscale=temporal_lengthscale, **layer_kwargs)
+        layer_args = (temporal_input_dim, hidden_dim, bottleneck_dim)
+        temporal_layer = get_layer(temporal_rff_layer_type, *layer_args, lengthscale=temporal_lengthscale, **layer_kwargs)
         self.temporal_layers.append(temporal_layer)
 
     def process_spatial(self, spatial_input):
@@ -128,9 +137,12 @@ class DeepSpatiotemporalGPNN(SpatiotemporalModelBase):
         Returns:
             torch.Tensor: Processed spatial data.
         """
-        for layer in self.spatial_layers:
-            spatial_input = torch.cat((spatial_input, layer(spatial_input)), dim=1)
-        return spatial_input
+        spatial_x = spatial_input.clone()
+        for n, layer in enumerate(self.spatial_layers):
+            spatial_x = layer(spatial_x)
+            if n < len(self.spatial_layers) - 1:
+                spatial_x = torch.cat((spatial_x, spatial_input), dim=1)
+        return spatial_x
 
     def process_temporal(self, temporal_input):
         """
@@ -142,7 +154,71 @@ class DeepSpatiotemporalGPNN(SpatiotemporalModelBase):
         Returns:
             torch.Tensor: Processed temporal data.
         """
-        return self.temporal_layers[0](temporal_input)
+        temporal_x = self.temporal_layers[0](temporal_input)
+        return temporal_x
+
+def initialize_model(model_name, num_layers, spatial_input_dim, temporal_input_dim, hidden_dim, bottleneck_dim, output_dim, spatial_lengthscale, temporal_lengthscale, amplitude, device, spatial_layer_type='Matern', temporal_layer_type='Matern', model_kwargs=None):
+    """
+    Initializes the specified model based on the provided configuration.
+
+    Args:
+        model_name (str): The name of the model to initialize. Supported options are 'DeepSpatiotemporalGPNN' and 'DeepMaternRandomPhaseS2RFFNN'.
+        num_layers (int): The number of layers in the model.
+        spatial_input_dim (int): The dimensionality of the spatial input.
+        temporal_input_dim (int): The dimensionality of the temporal input.
+        hidden_dim (int): The dimensionality of the hidden layers.
+        bottleneck_dim (int): The dimensionality of the bottleneck layer.
+        output_dim (int): The dimensionality of the output.
+        spatial_lengthscale (float): The lengthscale for the spatial input.
+        temporal_lengthscale (float): The lengthscale for the temporal input.
+        amplitude (float): The amplitude used in the model.
+        device (torch.device): The device (CPU or GPU) on which the model will be run.
+        spatial_layer_type (str, optional): The type of spatial layer to use. Default is 'Matern'.
+        temporal_layer_type (str, optional): The type of temporal layer to use. Default is 'Matern'.
+        model_kwargs (dict, optional): Additional keyword arguments to pass to the model. Default is None.
+
+    Returns:
+        torch.nn.Module: The initialized model.
+
+    Raises:
+        ValueError: If an unsupported model name is provided.
+    """
+
+    if model_kwargs is None:
+        model_kwargs = {}
+    if model_name == 'DeepSpatiotemporalGPNN':
+        layer_kwargs = {'amplitude': amplitude}
+        return DeepSpatiotemporalGPNN(
+            num_layers=num_layers,
+            spatial_input_dim=spatial_input_dim,
+            temporal_input_dim=temporal_input_dim,
+            hidden_dim=hidden_dim,
+            bottleneck_dim=bottleneck_dim,
+            output_dim=output_dim,
+            spatial_rff_layer_type=spatial_layer_type,
+            temporal_rff_layer_type=temporal_layer_type,
+            spatial_lengthscale=spatial_lengthscale,
+            temporal_lengthscale=temporal_lengthscale,
+            layer_kwargs=layer_kwargs,
+            device=device,
+            **model_kwargs
+        )
+    elif model_name == 'DeepMaternRandomPhaseS2RFFNN':
+        return DeepMaternRandomPhaseS2RFFNN(
+            num_layers=num_layers,
+            spatial_input_dim=spatial_input_dim,
+            temporal_input_dim=temporal_input_dim,
+            hidden_dim=hidden_dim,
+            bottleneck_dim=bottleneck_dim,
+            output_dim=output_dim,
+            spatial_lengthscale=spatial_lengthscale,
+            temporal_lengthscale=temporal_lengthscale,
+            amplitude=amplitude,
+            device=device,
+            **model_kwargs
+        )
+    else:
+        raise ValueError(f"Unknown model name: {model_name}")
 
 
 class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
@@ -299,3 +375,4 @@ class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
             x += self.hidden_layer_s2(s)
             x = self.output_layer(x)
             return x
+

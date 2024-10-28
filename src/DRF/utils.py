@@ -23,7 +23,7 @@ def calculate_batch_nll(mu, var, y_true, batch_size=1024):
         var_batch = var[i:end_index].to(mu.device)
         y_true_batch = y_true[i:end_index].to(mu.device)
 
-        nll = gaussian_nll_loss(mu_batch, y_true_batch.unsqueeze(1), var_batch)
+        nll = gaussian_nll_loss(mu_batch, y_true_batch, var_batch)
         total_nll += nll.item() * (end_index - i)
         total_batches += (end_index - i)
 

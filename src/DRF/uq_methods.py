@@ -29,7 +29,7 @@ class DeepEnsemble:
         self.device = device
         self.num_epochs = num_epochs
     
-    def map_loss(outputs, targets, model_parameters, s_squared):
+    def map_loss(self,outputs, targets, model_parameters, s_squared):
         """
         Computes the Maximum A Posteriori (MAP) loss, which is a combination of the mean squared error (MSE) and 
         a regularization term on the model parameters (L2 regularization).
@@ -43,11 +43,10 @@ class DeepEnsemble:
         Returns:
             torch.Tensor: The total MAP loss, which is the sum of the MSE and the regularization term.
         """
-        mse_term = ((outputs - targets) ** 2).sum()
+        mse_term = ((outputs - targets) ** 2).sum() / (2*1e-2**2)
+        reg_term = 0.5* sum(param.pow(2).sum() for param in model_parameters)  / s_squared
 
-        reg_term = sum(param.pow(2).sum() for param in model_parameters) / (2 * s_squared)
-
-        total_loss = mse_term + reg_term*(2*1e-2**2)
+        total_loss = mse_term + reg_term
         return total_loss
 
     def train_and_evaluate(self, spatial_lengthscale, temporal_lengthscale, amplitude, train_loader, val_loader, spatial_X_test, temporal_X_test):

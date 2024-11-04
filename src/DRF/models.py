@@ -236,12 +236,15 @@ class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
         lon_lat_inputs (bool, optional): If True, input is expected to be longitude and latitude.
         combine_type (str, optional): Method for combining spatial and temporal features.
     """
-    
-    def __init__(self, num_layers, spatial_input_dim, temporal_input_dim, hidden_dim, bottleneck_dim, output_dim, spatial_lengthscale, temporal_lengthscale, nu, amplitude, lengthscale2, amplitude2, lon_lat_inputs=True, combine_type='concat'):
+    def __init__(self, num_layers, spatial_input_dim, temporal_input_dim, hidden_dim, bottleneck_dim, output_dim,
+                 spatial_lengthscale, temporal_lengthscale, nu, amplitude, lengthscale2, amplitude2, lon_lat_inputs=True, combine_type='concat', device='cpu'):
         super().__init__(num_layers, spatial_input_dim, temporal_input_dim, hidden_dim, bottleneck_dim, output_dim, combine_type)
+        self.device = device
+        self.lon_lat_inputs = lon_lat_inputs
+        self.to(self.device)
 
+        input_dim = spatial_input_dim 
         s2_dim = 2 if lon_lat_inputs else 3
-
         for i in range(num_layers):
             if i == 0:
                 layer = MaternRandomPhaseS2RFFLayer(
@@ -250,9 +253,10 @@ class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
                     lengthscale=spatial_lengthscale,
                     nu=nu,
                     amplitude=amplitude,
-                    lon_lat_inputs=lon_lat_inputs)
+                    lon_lat_inputs=lon_lat_inputs
+                )
             else:
-                layer = self.SumFeatures(
+                layer = SumFeatures(
                     input_dim=bottleneck_dim + s2_dim,
                     hidden_dim=hidden_dim,
                     output_dim=bottleneck_dim,
@@ -261,25 +265,35 @@ class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
                     lengthscale2=lengthscale2,
                     amplitude2=amplitude2,
                     nu=nu,
-                    lon_lat_inputs=lon_lat_inputs)
-            self.spatial_layers.append(layer)
+                    lon_lat_inputs=lon_lat_inputs
+                )
+            self.spatial_layers.append(layer.to(self.device))
 
-        temporal_layer = MaternRFFLayer(temporal_input_dim, hidden_dim, bottleneck_dim, temporal_lengthscale, nu, amplitude)
-        self.temporal_layers.append(temporal_layer)
+        self.temporal_layers = nn.ModuleList() 
+        temporal_layer = MaternRFFLayer(
+            input_dim=temporal_input_dim,
+            hidden_dim=hidden_dim,
+            output_dim=bottleneck_dim,
+            lengthscale=temporal_lengthscale,
+            nu=nu,
+            amplitude=amplitude
+        )
+        self.temporal_layers.append(temporal_layer.to(self.device))
+
     
     def process_spatial(self, spatial_input):
-        """
-        Processes spatial input through the series of spatial layers.
+        original_spatial_input = spatial_input
+        x_spatial = original_spatial_input.clone()
 
-        Args:
-            spatial_input (torch.Tensor): Spatial input tensor.
+        for n, layer in enumerate(self.spatial_layers):
+            if n < self.num_layers - 1:
+                x_spatial = layer(x_spatial)
+                x_spatial = torch.cat([x_spatial, original_spatial_input], dim=1)
+            else:
+                x_spatial = layer(x_spatial)
 
-        Returns:
-            torch.Tensor: Processed spatial data.
-        """
-        for layer in self.spatial_layers:
-            spatial_input = layer(spatial_input)
-        return spatial_input
+        return x_spatial
+    
 
     def process_temporal(self, temporal_input):
         """
@@ -291,10 +305,12 @@ class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
         Returns:
             torch.Tensor: Processed temporal data.
         """
+        temporal_input = temporal_input.to(self.device)
         return self.temporal_layers[0](temporal_input)
 
-    class SumFeatures(nn.Module):
-        """
+
+class SumFeatures(nn.Module):
+    """
         A specialized layer for combining features, tailored for spherical data with
         Matern random phase features.
 
@@ -309,54 +325,39 @@ class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
             amplitude2 (float): Secondary amplitude scaling.
             lon_lat_inputs (bool): If True, expects longitude and latitude inputs.
         """
-        
-        def __init__(self, input_dim, hidden_dim, output_dim, lengthscale=1., nu=3/2, amplitude=1., lengthscale2=1., amplitude2=1., lon_lat_inputs=True):
-            super().__init__()
-            self.input_dim = input_dim
-            self.hidden_dim = hidden_dim
-            self.output_dim = output_dim
-            self.lengthscale = lengthscale
-            self.nu = nu
-            self.amplitude = amplitude
-            self.lengthscale2 = lengthscale2
-            self.amplitude2 = amplitude2
-            self.lon_lat_inputs = lon_lat_inputs
-            self.hidden_layer_rn, self.hidden_layer_s2, self.output_layer = self.initialize_layers()
+    def __init__(self, input_dim, hidden_dim, output_dim, lengthscale=1., nu=3/2, amplitude=1., lengthscale2=1., amplitude2=1., lon_lat_inputs=True):
+        super().__init__()
+        self.input_dim = input_dim 
+        self.hidden_dim = hidden_dim
+        self.output_dim = output_dim
+        self.lengthscale = lengthscale
+        self.nu = nu
+        self.amplitude = amplitude
+        self.lengthscale2 = lengthscale2
+        self.amplitude2 = amplitude2
+        self.lon_lat_inputs = lon_lat_inputs
+        self.hidden_layer_rn, self.hidden_layer_s2, self.output_layer = self.initialize_layers()
 
-        def initialize_layers(self):
-            """
+    def initialize_layers(self):
+        """
             Initializes layers based on Matern RFF and random phase feature maps.
 
             Returns:
                 Tuple[nn.Linear, nn.Module, nn.Linear]: Initialized hidden and output layers.
             """
-            input_dim_x = self.input_dim - 2 if self.lon_lat_inputs else self.input_dim - 3
-            
-            hidden_layer_rn = MaternRFFLayer(input_dim_x, self.hidden_dim, self.output_dim, self.lengthscale2, self.nu, self.amplitude2).hidden_layer
-            hidden_layer_s2 = MaternRandomPhaseS2RFFLayer(self.hidden_dim, self.output_dim, self.lengthscale, self.nu, self.amplitude).feature_map
-            output_layer = nn.Linear(self.hidden_dim, self.output_dim, bias=False)
+        if self.lon_lat_inputs:
+            input_dim_x = self.input_dim - 2
+        else:
+            input_dim_x = self.input_dim - 3
+        
+        hidden_layer_rn = MaternRFFLayer(input_dim_x, self.hidden_dim, self.output_dim, self.lengthscale2, self.nu, self.amplitude2).hidden_layer
+        hidden_layer_s2 = MaternRandomPhaseS2RFFLayer(self.hidden_dim, self.output_dim, self.lengthscale, self.nu, self.amplitude).feature_map
+        output_layer = nn.Linear(self.hidden_dim, self.output_dim, bias=False)
 
-            return hidden_layer_rn, hidden_layer_s2, output_layer
+        return hidden_layer_rn, hidden_layer_s2, output_layer
 
-        @staticmethod
-        def spherical_to_cartesian(lon, lat):
-            """
-            Converts spherical coordinates (longitude and latitude) to Cartesian coordinates.
-
-            Args:
-                lon (torch.Tensor): Longitude values in radians.
-                lat (torch.Tensor): Latitude values in radians.
-
-            Returns:
-                torch.Tensor: A tensor with Cartesian coordinates.
-            """
-            x = torch.cos(lat) * torch.cos(lon)
-            y = torch.cos(lat) * torch.sin(lon)
-            z = torch.sin(lat)
-            return torch.stack((x, y, z), dim=1)
-
-        def forward(self, x):
-            """
+    def forward(self, x):
+        """
             Processes input through the hidden layers and combines the features.
 
             Args:
@@ -364,15 +365,34 @@ class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
 
             Returns:
                 torch.Tensor: Processed output tensor.
-            """
-            x_ = x[:, :-2] if self.lon_lat_inputs else x[:, :-3]
-            s = x[:, -2:] if self.lon_lat_inputs else x[:, -3:]
-            s = self.spherical_to_cartesian(s[:, 0], s[:, 1]) if self.lon_lat_inputs else s
-            
-            x = self.hidden_layer_rn(x_)
-            scaling_factor = torch.sqrt(torch.tensor(2.0 * self.amplitude**2 / self.hidden_layer_rn.out_features))
-            x = scaling_factor * torch.cos(x)
-            x += self.hidden_layer_s2(s)
-            x = self.output_layer(x)
-            return x
+        """
+        if self.lon_lat_inputs:
+            x_ = x[:,:-2]
+            s = x[:,-2:]
+            s = self.spherical_to_cartesian(s[:,0], s[:,1])
+        else:
+            x_ = x[:,:-3]
+            s = x[:,-3:]
+        x = self.hidden_layer_rn(x_)
+        scaling_factor = torch.sqrt(torch.tensor(2.0 * self.amplitude**2 / self.hidden_layer_rn.out_features))
+        x = scaling_factor * torch.cos(x)
+        x += self.hidden_layer_s2(s)
+        x = self.output_layer(x)
+        return x
+    
+    def spherical_to_cartesian(self,lon, lat):
+        """
+            Processes input through the hidden layers and combines the features.
+
+            Args:
+                x (torch.Tensor): Input tensor.
+
+            Returns:
+                torch.Tensor: Processed output tensor.
+        """
+        x = torch.cos(lat) * torch.cos(lon)
+        y = torch.cos(lat) * torch.sin(lon)
+        z = torch.sin(lat)
+        return torch.stack((x, y, z), dim=1)
+
 

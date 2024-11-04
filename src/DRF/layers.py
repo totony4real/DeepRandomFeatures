@@ -155,6 +155,7 @@ class RandomPhaseFeatureMap:
     """
     Random phase feature maps for spherical Matern GP 
     """
+
     def __init__(self, num_features, nu, lengthscale, num_levels=24):
         sphere = Hypersphere(dim=2)
         kernel = MaternGeometricKernel(sphere, num=num_levels)
@@ -162,28 +163,28 @@ class RandomPhaseFeatureMap:
         spectrum = kernel._spectrum(sphere.get_eigenvalues(num_levels),
                                     nu=torch.tensor([nu]),
                                     lengthscale=torch.tensor([lengthscale]))
-        self.spectrum = spectrum/torch.sum(spectrum)
+        self.spectrum = spectrum / torch.sum(spectrum)
 
-        self.gegenbauer_coeff_table = torch.zeros(num_levels, num_levels+1) # Due to floating point errors, recommended to use degree only up to 24
+        self.gegenbauer_coeff_table = torch.zeros(num_levels, num_levels + 1)
         for i in range(num_levels):
-            self.gegenbauer_coeff_table[i][-(i+1):] = torch.tensor(list(scipy_gegenbauer(i, 1/2).coefficients))
+            coeffs = scipy_gegenbauer(i, 1/2).coefficients
+            self.gegenbauer_coeff_table[i][-(i+1):] = torch.tensor(coeffs)
 
         self.levels = torch.multinomial(self.spectrum.squeeze(), num_features, replacement=True)
         noise = torch.randn(num_features, 3)
-        self.noise = noise/torch.linalg.norm(noise, dim=1)[:, None]
+        self.noise = noise / torch.linalg.norm(noise, dim=1, keepdim=True)
+
 
     @staticmethod
     def polyval(coeffs, x):
         """
-        Adapted from vdutor/SphericalHarmonics.
         Compute batched values of a polynomial.
         """
         assert len(coeffs) == len(x)
         curVal = torch.zeros_like(x)
         for i in range(len(coeffs.T) - 1):
-            curVal = (curVal + coeffs[:,[i]]) * x
-
-        return curVal + coeffs[:,[-1]]
+            curVal = (curVal + coeffs[:, [i]]) * x
+        return curVal + coeffs[:, [-1]]
 
     def get_gegenbauer12_coeffs(self, n):
         """Get coefficients of Gegenbauer polynomial with α=1/2 and order n"""
@@ -196,20 +197,39 @@ class RandomPhaseFeatureMap:
 
     @staticmethod
     def gamma(x):
-        return exp(lgamma(x))
+        return torch.exp(torch.lgamma(x))
 
     def c(self, l):
-        c = (2*l+1)/(4*torch.pi)
-        return c[:,None]
+        c = (2 * l + 1) / (4 * torch.pi)
+        return c[:, None]
 
     def __call__(self, X):
-        # TODO: Choose normalise constant more rigorously
-        # Empirically found that scaling with √0.079 works well to get unit variance
-        UXT = self.noise @ X.T # Shape (N, B)
+        device = X.device
+        self.noise = self.noise.to(device)
+        self.levels = self.levels.to(device)
+        self.gegenbauer_coeff_table = self.gegenbauer_coeff_table.to(device)
+        
+        UXT = self.noise @ X.T  # Shape (N, B)
         c = self.c(self.levels)
-        fX = torch.sqrt(c) * self.gegenbauer12(self.levels, UXT) / np.sqrt(self.N * 0.079) # Shape (N, B)
-        return fX.T # Shape (B, N)
+        fX = torch.sqrt(c) * self.gegenbauer12(self.levels, UXT) / np.sqrt(self.N * 0.079)  # Shape (N, B)
+        return fX.T  # Shape (B, N)
 
+
+def spherical_to_cartesian(lon, lat):
+    """
+        Converts spherical coordinates (longitude and latitude) to Cartesian coordinates.
+
+        Args:
+            lon (torch.Tensor): Longitude values in radians.
+            lat (torch.Tensor): Latitude values in radians.
+
+        Returns:
+            torch.Tensor: A tensor containing the Cartesian coordinates, with shape (N, 3).
+    """
+    x = torch.cos(lat) * torch.cos(lon)
+    y = torch.cos(lat) * torch.sin(lon)
+    z = torch.sin(lat)
+    return torch.stack((x, y, z), dim=1)
 
 class MaternRandomPhaseS2RFFLayer(nn.Module):
     """
@@ -229,7 +249,6 @@ class MaternRandomPhaseS2RFFLayer(nn.Module):
         lon_lat_inputs (bool, optional): Indicates whether the input is in longitude and latitude 
             format. If True, inputs are converted to Cartesian coordinates. Defaults to True.
     """
-
     def __init__(self, hidden_dim, output_dim, lengthscale=1., nu=3/2, amplitude=1., lon_lat_inputs=True):
         super().__init__()
         self.lengthscale = lengthscale
@@ -243,34 +262,12 @@ class MaternRandomPhaseS2RFFLayer(nn.Module):
         self.output_layer.weight.data.normal_(0, 1)
 
     def initialize_feature_map(self):
-        """
-        Initializes the random phase feature map based on the Matern kernel parameters.
-
-        Returns:
-            RandomPhaseFeatureMap: An instance of the feature map with random phases.
-        """
+        
         feature_map = RandomPhaseFeatureMap(num_features=self.hidden_dim,
                                             nu=self.nu,
                                             lengthscale=self.lengthscale)
         return feature_map
 
-    @staticmethod
-    def spherical_to_cartesian(lon, lat):
-        """
-        Converts spherical coordinates (longitude and latitude) to Cartesian coordinates.
-
-        Args:
-            lon (torch.Tensor): Longitude values in radians.
-            lat (torch.Tensor): Latitude values in radians.
-
-        Returns:
-            torch.Tensor: A tensor containing the Cartesian coordinates, with shape (N, 3).
-        """
-        x = torch.cos(lat) * torch.cos(lon)
-        y = torch.cos(lat) * torch.sin(lon)
-        z = torch.sin(lat)
-        return torch.stack((x, y, z), dim=1)
-    
     def forward(self, x):
         """
         The forward pass of the layer, applying the feature map and linear transformation.
@@ -286,11 +283,13 @@ class MaternRandomPhaseS2RFFLayer(nn.Module):
         device = next(self.parameters()).device
         x = x.to(device)
         if self.lon_lat_inputs:
-            x = self.spherical_to_cartesian(x[:,0], x[:,1])
+            x = spherical_to_cartesian(x[:,0], x[:,1])
         x = self.feature_map(x)
         x *= self.amplitude
         x = self.output_layer(x)
         return x
+
+
 
 
 

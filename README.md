@@ -10,12 +10,11 @@ DRF is a Bayesian deep learning framework, whose layers share the inductive bias
     <div>
         <img src="images/sla_satellite_measurements.png" alt="Satellite Measurements" width="500" />
     </div>
-    
-    <!-- Smaller Images on the Right, Stacked Vertically -->
     <div style="display: flex; flex-direction: column; margin-left: 10px;">
         <img src="images/sla_drf_predictions.png" alt="DRF Predictions" width="240" style="margin-bottom: 10px;" />
         <img src="images/sla_drf_uncertainties.png" alt="DRF Uncertainties" width="240" />
     </div>
 </div>
+
 
 

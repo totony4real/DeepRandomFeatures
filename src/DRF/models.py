@@ -16,18 +16,31 @@ class SpatiotemporalModelBase(nn.Module):
         hidden_dim (int): Dimensionality of hidden layers.
         bottleneck_dim (int): Dimensionality of bottleneck layers.
         output_dim (int): Dimensionality of the model's output.
-        combine_type (str, optional): Method for combining spatial and temporal features. 
+        combine_type (str, optional): Method for combining spatial and temporal features.
             Options are 'concat', 'product', or 'sum'. Defaults to 'concat'.
     """
-    
-    def __init__(self, num_layers, spatial_input_dim, temporal_input_dim, hidden_dim, bottleneck_dim, output_dim, combine_type='concat'):
+
+    def __init__(
+        self,
+        num_layers,
+        spatial_input_dim,
+        temporal_input_dim,
+        hidden_dim,
+        bottleneck_dim,
+        output_dim,
+        combine_type="concat",
+    ):
         super(SpatiotemporalModelBase, self).__init__()
         self.num_layers = num_layers
         self.combine_type = combine_type
         self.output_dim = output_dim
         self.spatial_layers = nn.ModuleList()
         self.temporal_layers = nn.ModuleList()
-        self.output_layer = nn.Linear(2 * bottleneck_dim, output_dim) if combine_type == 'concat' else nn.Linear(bottleneck_dim, output_dim)
+        self.output_layer = (
+            nn.Linear(2 * bottleneck_dim, output_dim)
+            if combine_type == "concat"
+            else nn.Linear(bottleneck_dim, output_dim)
+        )
 
     def forward(self, spatial_input, temporal_input):
         """
@@ -42,10 +55,10 @@ class SpatiotemporalModelBase(nn.Module):
         """
         spatial_x = self.process_spatial(spatial_input)
         temporal_x = self.process_temporal(temporal_input)
-        
+
         if spatial_x.shape != temporal_x.shape:
             raise ValueError("Spatial and Temporal output dimensions do not match.")
-        
+
         combined_output = self.combine_features(spatial_x, temporal_x)
         return self.output_layer(combined_output)
 
@@ -84,11 +97,11 @@ class SpatiotemporalModelBase(nn.Module):
         Returns:
             torch.Tensor: Combined spatial and temporal data.
         """
-        if self.combine_type == 'concat':
+        if self.combine_type == "concat":
             return torch.cat((spatial_x, temporal_x), dim=1)
-        elif self.combine_type == 'product':
+        elif self.combine_type == "product":
             return spatial_x * temporal_x
-        elif self.combine_type == 'sum':
+        elif self.combine_type == "sum":
             return spatial_x + temporal_x
         else:
             raise NotImplementedError
@@ -96,7 +109,7 @@ class SpatiotemporalModelBase(nn.Module):
 
 class DeepSpatiotemporalGPNN(SpatiotemporalModelBase):
     """
-    A spatiotemporal neural network that utilizes random Fourier features for processing 
+    A spatiotemporal neural network that utilizes random Fourier features for processing
     both spatial and temporal data separately, then combines them.
 
     Args:
@@ -108,23 +121,58 @@ class DeepSpatiotemporalGPNN(SpatiotemporalModelBase):
         combine_type (str, optional): Method for combining spatial and temporal features.
         device (str, optional): Device to run the model on. Defaults to 'cuda'.
     """
-    
-    def __init__(self, num_layers, spatial_input_dim, temporal_input_dim, hidden_dim, bottleneck_dim, output_dim,
-                 spatial_rff_layer_type, temporal_rff_layer_type,
-                 spatial_lengthscale, temporal_lengthscale, layer_kwargs, combine_type='concat', device='cuda'):
-        super().__init__(num_layers, spatial_input_dim, temporal_input_dim, hidden_dim, bottleneck_dim, output_dim, combine_type)
+
+    def __init__(
+        self,
+        num_layers,
+        spatial_input_dim,
+        temporal_input_dim,
+        hidden_dim,
+        bottleneck_dim,
+        output_dim,
+        spatial_rff_layer_type,
+        temporal_rff_layer_type,
+        spatial_lengthscale,
+        temporal_lengthscale,
+        layer_kwargs,
+        combine_type="concat",
+        device="cuda",
+    ):
+        super().__init__(
+            num_layers,
+            spatial_input_dim,
+            temporal_input_dim,
+            hidden_dim,
+            bottleneck_dim,
+            output_dim,
+            combine_type,
+        )
         self.device = device
 
         for i in range(num_layers):
             if i == 0:
                 layer_args = (spatial_input_dim, hidden_dim, bottleneck_dim)
             else:
-                layer_args = (bottleneck_dim + spatial_input_dim, hidden_dim, bottleneck_dim)
-            spatial_layer = get_layer(spatial_rff_layer_type, *layer_args, lengthscale=spatial_lengthscale, **layer_kwargs)
+                layer_args = (
+                    bottleneck_dim + spatial_input_dim,
+                    hidden_dim,
+                    bottleneck_dim,
+                )
+            spatial_layer = get_layer(
+                spatial_rff_layer_type,
+                *layer_args,
+                lengthscale=spatial_lengthscale,
+                **layer_kwargs,
+            )
             self.spatial_layers.append(spatial_layer)
 
         layer_args = (temporal_input_dim, hidden_dim, bottleneck_dim)
-        temporal_layer = get_layer(temporal_rff_layer_type, *layer_args, lengthscale=temporal_lengthscale, **layer_kwargs)
+        temporal_layer = get_layer(
+            temporal_rff_layer_type,
+            *layer_args,
+            lengthscale=temporal_lengthscale,
+            **layer_kwargs,
+        )
         self.temporal_layers.append(temporal_layer)
 
     def process_spatial(self, spatial_input):
@@ -157,7 +205,23 @@ class DeepSpatiotemporalGPNN(SpatiotemporalModelBase):
         temporal_x = self.temporal_layers[0](temporal_input)
         return temporal_x
 
-def initialize_model(model_name, num_layers, spatial_input_dim, temporal_input_dim, hidden_dim, bottleneck_dim, output_dim, spatial_lengthscale, temporal_lengthscale, amplitude, device, spatial_layer_type='Matern', temporal_layer_type='Matern', model_kwargs=None):
+
+def initialize_model(
+    model_name,
+    num_layers,
+    spatial_input_dim,
+    temporal_input_dim,
+    hidden_dim,
+    bottleneck_dim,
+    output_dim,
+    spatial_lengthscale,
+    temporal_lengthscale,
+    amplitude,
+    device,
+    spatial_layer_type="Matern",
+    temporal_layer_type="Matern",
+    model_kwargs=None,
+):
     """
     Initializes the specified model based on the provided configuration.
 
@@ -186,8 +250,8 @@ def initialize_model(model_name, num_layers, spatial_input_dim, temporal_input_d
 
     if model_kwargs is None:
         model_kwargs = {}
-    if model_name == 'DeepSpatiotemporalGPNN':
-        layer_kwargs = {'amplitude': amplitude}
+    if model_name == "DeepSpatiotemporalGPNN":
+        layer_kwargs = {"amplitude": amplitude}
         return DeepSpatiotemporalGPNN(
             num_layers=num_layers,
             spatial_input_dim=spatial_input_dim,
@@ -201,9 +265,9 @@ def initialize_model(model_name, num_layers, spatial_input_dim, temporal_input_d
             temporal_lengthscale=temporal_lengthscale,
             layer_kwargs=layer_kwargs,
             device=device,
-            **model_kwargs
+            **model_kwargs,
         )
-    elif model_name == 'DeepMaternRandomPhaseS2RFFNN':
+    elif model_name == "DeepMaternRandomPhaseS2RFFNN":
         return DeepMaternRandomPhaseS2RFFNN(
             num_layers=num_layers,
             spatial_input_dim=spatial_input_dim,
@@ -215,7 +279,7 @@ def initialize_model(model_name, num_layers, spatial_input_dim, temporal_input_d
             temporal_lengthscale=temporal_lengthscale,
             amplitude=amplitude,
             device=device,
-            **model_kwargs
+            **model_kwargs,
         )
     else:
         raise ValueError(f"Unknown model name: {model_name}")
@@ -223,7 +287,7 @@ def initialize_model(model_name, num_layers, spatial_input_dim, temporal_input_d
 
 class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
     """
-    A spatiotemporal neural network utilizing Matern random phase features for spherical 
+    A spatiotemporal neural network utilizing Matern random phase features for spherical
     data, specifically designed for processing spatial data on a spherical domain.
 
     Args:
@@ -236,14 +300,39 @@ class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
         lon_lat_inputs (bool, optional): If True, input is expected to be longitude and latitude.
         combine_type (str, optional): Method for combining spatial and temporal features.
     """
-    def __init__(self, num_layers, spatial_input_dim, temporal_input_dim, hidden_dim, bottleneck_dim, output_dim,
-                 spatial_lengthscale, temporal_lengthscale, nu, amplitude, lengthscale2, amplitude2, lon_lat_inputs=True, combine_type='concat', device='cpu'):
-        super().__init__(num_layers, spatial_input_dim, temporal_input_dim, hidden_dim, bottleneck_dim, output_dim, combine_type)
+
+    def __init__(
+        self,
+        num_layers,
+        spatial_input_dim,
+        temporal_input_dim,
+        hidden_dim,
+        bottleneck_dim,
+        output_dim,
+        spatial_lengthscale,
+        temporal_lengthscale,
+        nu,
+        amplitude,
+        lengthscale2,
+        amplitude2,
+        lon_lat_inputs=True,
+        combine_type="concat",
+        device="cpu",
+    ):
+        super().__init__(
+            num_layers,
+            spatial_input_dim,
+            temporal_input_dim,
+            hidden_dim,
+            bottleneck_dim,
+            output_dim,
+            combine_type,
+        )
         self.device = device
         self.lon_lat_inputs = lon_lat_inputs
         self.to(self.device)
 
-        input_dim = spatial_input_dim 
+        input_dim = spatial_input_dim
         s2_dim = 2 if lon_lat_inputs else 3
         for i in range(num_layers):
             if i == 0:
@@ -253,7 +342,7 @@ class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
                     lengthscale=spatial_lengthscale,
                     nu=nu,
                     amplitude=amplitude,
-                    lon_lat_inputs=lon_lat_inputs
+                    lon_lat_inputs=lon_lat_inputs,
                 )
             else:
                 layer = SumFeatures(
@@ -265,22 +354,21 @@ class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
                     lengthscale2=lengthscale2,
                     amplitude2=amplitude2,
                     nu=nu,
-                    lon_lat_inputs=lon_lat_inputs
+                    lon_lat_inputs=lon_lat_inputs,
                 )
             self.spatial_layers.append(layer.to(self.device))
 
-        self.temporal_layers = nn.ModuleList() 
+        self.temporal_layers = nn.ModuleList()
         temporal_layer = MaternRFFLayer(
             input_dim=temporal_input_dim,
             hidden_dim=hidden_dim,
             output_dim=bottleneck_dim,
             lengthscale=temporal_lengthscale,
             nu=nu,
-            amplitude=amplitude
+            amplitude=amplitude,
         )
         self.temporal_layers.append(temporal_layer.to(self.device))
 
-    
     def process_spatial(self, spatial_input):
         original_spatial_input = spatial_input
         x_spatial = original_spatial_input.clone()
@@ -293,7 +381,6 @@ class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
                 x_spatial = layer(x_spatial)
 
         return x_spatial
-    
 
     def process_temporal(self, temporal_input):
         """
@@ -311,23 +398,35 @@ class DeepMaternRandomPhaseS2RFFNN(SpatiotemporalModelBase):
 
 class SumFeatures(nn.Module):
     """
-        A specialized layer for combining features, tailored for spherical data with
-        Matern random phase features.
+    A specialized layer for combining features, tailored for spherical data with
+    Matern random phase features.
 
-        Args:
-            input_dim (int): Dimensionality of the input.
-            hidden_dim (int): Dimensionality of the hidden layer.
-            output_dim (int): Dimensionality of the output layer.
-            lengthscale (float): Lengthscale for the hidden layer.
-            nu (float): Smoothness parameter for the Matern kernel.
-            amplitude (float): Amplitude scaling for hidden layers.
-            lengthscale2 (float): Secondary lengthscale for an additional layer.
-            amplitude2 (float): Secondary amplitude scaling.
-            lon_lat_inputs (bool): If True, expects longitude and latitude inputs.
-        """
-    def __init__(self, input_dim, hidden_dim, output_dim, lengthscale=1., nu=3/2, amplitude=1., lengthscale2=1., amplitude2=1., lon_lat_inputs=True):
+    Args:
+        input_dim (int): Dimensionality of the input.
+        hidden_dim (int): Dimensionality of the hidden layer.
+        output_dim (int): Dimensionality of the output layer.
+        lengthscale (float): Lengthscale for the hidden layer.
+        nu (float): Smoothness parameter for the Matern kernel.
+        amplitude (float): Amplitude scaling for hidden layers.
+        lengthscale2 (float): Secondary lengthscale for an additional layer.
+        amplitude2 (float): Secondary amplitude scaling.
+        lon_lat_inputs (bool): If True, expects longitude and latitude inputs.
+    """
+
+    def __init__(
+        self,
+        input_dim,
+        hidden_dim,
+        output_dim,
+        lengthscale=1.0,
+        nu=3 / 2,
+        amplitude=1.0,
+        lengthscale2=1.0,
+        amplitude2=1.0,
+        lon_lat_inputs=True,
+    ):
         super().__init__()
-        self.input_dim = input_dim 
+        self.input_dim = input_dim
         self.hidden_dim = hidden_dim
         self.output_dim = output_dim
         self.lengthscale = lengthscale
@@ -336,63 +435,74 @@ class SumFeatures(nn.Module):
         self.lengthscale2 = lengthscale2
         self.amplitude2 = amplitude2
         self.lon_lat_inputs = lon_lat_inputs
-        self.hidden_layer_rn, self.hidden_layer_s2, self.output_layer = self.initialize_layers()
+        self.hidden_layer_rn, self.hidden_layer_s2, self.output_layer = (
+            self.initialize_layers()
+        )
 
     def initialize_layers(self):
         """
-            Initializes layers based on Matern RFF and random phase feature maps.
+        Initializes layers based on Matern RFF and random phase feature maps.
 
-            Returns:
-                Tuple[nn.Linear, nn.Module, nn.Linear]: Initialized hidden and output layers.
-            """
+        Returns:
+            Tuple[nn.Linear, nn.Module, nn.Linear]: Initialized hidden and output layers.
+        """
         if self.lon_lat_inputs:
             input_dim_x = self.input_dim - 2
         else:
             input_dim_x = self.input_dim - 3
-        
-        hidden_layer_rn = MaternRFFLayer(input_dim_x, self.hidden_dim, self.output_dim, self.lengthscale2, self.nu, self.amplitude2).hidden_layer
-        hidden_layer_s2 = MaternRandomPhaseS2RFFLayer(self.hidden_dim, self.output_dim, self.lengthscale, self.nu, self.amplitude).feature_map
+
+        hidden_layer_rn = MaternRFFLayer(
+            input_dim_x,
+            self.hidden_dim,
+            self.output_dim,
+            self.lengthscale2,
+            self.nu,
+            self.amplitude2,
+        ).hidden_layer
+        hidden_layer_s2 = MaternRandomPhaseS2RFFLayer(
+            self.hidden_dim, self.output_dim, self.lengthscale, self.nu, self.amplitude
+        ).feature_map
         output_layer = nn.Linear(self.hidden_dim, self.output_dim, bias=False)
 
         return hidden_layer_rn, hidden_layer_s2, output_layer
 
     def forward(self, x):
         """
-            Processes input through the hidden layers and combines the features.
+        Processes input through the hidden layers and combines the features.
 
-            Args:
-                x (torch.Tensor): Input tensor.
+        Args:
+            x (torch.Tensor): Input tensor.
 
-            Returns:
-                torch.Tensor: Processed output tensor.
+        Returns:
+            torch.Tensor: Processed output tensor.
         """
         if self.lon_lat_inputs:
-            x_ = x[:,:-2]
-            s = x[:,-2:]
-            s = self.spherical_to_cartesian(s[:,0], s[:,1])
+            x_ = x[:, :-2]
+            s = x[:, -2:]
+            s = self.spherical_to_cartesian(s[:, 0], s[:, 1])
         else:
-            x_ = x[:,:-3]
-            s = x[:,-3:]
+            x_ = x[:, :-3]
+            s = x[:, -3:]
         x = self.hidden_layer_rn(x_)
-        scaling_factor = torch.sqrt(torch.tensor(2.0 * self.amplitude**2 / self.hidden_layer_rn.out_features))
+        scaling_factor = torch.sqrt(
+            torch.tensor(2.0 * self.amplitude**2 / self.hidden_layer_rn.out_features)
+        )
         x = scaling_factor * torch.cos(x)
         x += self.hidden_layer_s2(s)
         x = self.output_layer(x)
         return x
-    
-    def spherical_to_cartesian(self,lon, lat):
+
+    def spherical_to_cartesian(self, lon, lat):
         """
-            Processes input through the hidden layers and combines the features.
+        Processes input through the hidden layers and combines the features.
 
-            Args:
-                x (torch.Tensor): Input tensor.
+        Args:
+            x (torch.Tensor): Input tensor.
 
-            Returns:
-                torch.Tensor: Processed output tensor.
+        Returns:
+            torch.Tensor: Processed output tensor.
         """
         x = torch.cos(lat) * torch.cos(lon)
         y = torch.cos(lat) * torch.sin(lon)
         z = torch.sin(lat)
         return torch.stack((x, y, z), dim=1)
-
-

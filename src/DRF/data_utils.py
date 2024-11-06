@@ -222,7 +222,7 @@ def create_datasets_and_loaders(
     return train_loader, val_loader
 
 
-def get_spherical_data(file_path, device="cpu"):
+def get_spherical_data(file_path,test_data_path ,device="cpu"):
     """
     Loads and preprocesses spherical data from a CSV file.
 
@@ -276,8 +276,15 @@ def get_spherical_data(file_path, device="cpu"):
         d_theta = torch.abs(unique_lats[1] - unique_lats[0]).item()
     else:
         d_theta = 0.0
+    
+    data = torch.load(test_data_path)
+    grid_spatial_input = data['spatial'].to(device, dtype=torch.float32)
+    grid_temporal_input = data['temporal'].to(device, dtype=torch.float32)
 
-    return train_dataset, val_dataset, d_phi, d_theta
+    # Create the TensorDataset and DataLoader
+    test_dataset = TensorDataset(grid_spatial_input, grid_temporal_input)
+
+    return train_dataset, val_dataset, test_dataset, d_phi, d_theta
 
 
 def prepare_tensor_datasets_ABC(

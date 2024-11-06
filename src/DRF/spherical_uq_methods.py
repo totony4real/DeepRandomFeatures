@@ -12,12 +12,14 @@ from botorch.optim import optimize_acqf
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from tqdm import tqdm
 import torch.nn.functional as F
+import numpy as np
 
 
 def train_model_process(
     model_class,
     train_data,
     val_data,
+    test_data,
     num_layers,
     spatial_input_dim,
     temporal_input_dim,
@@ -121,7 +123,17 @@ def train_model_process(
     avg_val_loss = val_loss / len(val_loader)
     reg_loss = functional_regularisation_S2_batched(model, val_loader, d_phi, d_theta)
 
-    return avg_val_loss, predictions, reg_loss
+    preds = []
+    grid_loader = DataLoader(test_data, batch_size=8000, shuffle=False)
+    with torch.no_grad():
+        for batch in tqdm(grid_loader, desc="Predicting"):
+            batch_spatial_input, batch_temporal_input = batch
+            batch_preds = model(batch_spatial_input, batch_temporal_input).cpu().numpy()
+            preds.append(batch_preds)
+
+    preds = np.concatenate(preds, axis=0)
+
+    return avg_val_loss, predictions, reg_loss, preds
 
 
 class SphericalBayesianOptimizer:
@@ -134,6 +146,7 @@ class SphericalBayesianOptimizer:
         model_class,
         train_data,
         val_data,
+        test_data,
         num_layers,
         spatial_input_dim,
         temporal_input_dim,
@@ -153,6 +166,7 @@ class SphericalBayesianOptimizer:
         self.model_class = model_class
         self.train_data = train_data
         self.val_data = val_data
+        self.test_data = test_data
         self.num_layers = num_layers
         self.spatial_input_dim = spatial_input_dim
         self.temporal_input_dim = temporal_input_dim
@@ -168,6 +182,7 @@ class SphericalBayesianOptimizer:
         self.n_iterations = n_iterations
         self.n_initial_samples = n_initial_samples
         self.n_epochs = n_epochs
+        self.test_predictions_per_iteration = []
 
     def objective_function(self, hyperparams):
         """
@@ -181,6 +196,7 @@ class SphericalBayesianOptimizer:
                 self.model_class,
                 self.train_data,
                 self.val_data,
+                self.test_data,
                 self.num_layers,
                 self.spatial_input_dim,
                 self.temporal_input_dim,
@@ -203,7 +219,7 @@ class SphericalBayesianOptimizer:
         with mp.Pool(processes=self.num_models) as pool:
             results = pool.starmap(train_model_process, args_list)
 
-        val_losses, all_predictions, reg_losses = zip(*results)
+        val_losses, all_predictions, reg_losses, test_predictions = zip(*results)
         avg_val_loss = sum(val_losses) / len(val_losses)
         avg_reg_loss = sum(reg_losses) / len(reg_losses)
         avg_predictions = torch.stack(all_predictions).mean(dim=0).to(self.device)
@@ -217,9 +233,13 @@ class SphericalBayesianOptimizer:
         huber_loss = F.huber_loss(
             avg_predictions, val_values, reduction="mean", delta=1
         )
-        p_weight = 0.95
+        p_weight = self.p_weight
         final_loss = (1 - p_weight) * huber_loss.item() + p_weight * avg_reg_loss
         # final_loss = (1 - p_weight) * avg_val_loss + p_weight * avg_reg_loss
+
+        self.test_predictions_per_iteration.append(
+            (test_predictions, final_loss, hyperparams)
+        )
 
         return final_loss
 

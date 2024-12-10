@@ -54,7 +54,7 @@ The implementation is purely in Python, and this repository includes example scr
 
 ### Example Script
 The main example script for **Experiment 1** (local interpolation of synthetic mean sea surface data) is available in:
-- [src/DRF/main.py](src/DRF/main.py)
+- [src/DRF/experiment_1.py](src/DRF/main.py)
 
 ### Configuration File
 To run the example script, you can use the sample configuration file provided here:

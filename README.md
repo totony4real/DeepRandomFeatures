@@ -66,6 +66,10 @@ Ensure that the configuration file paths align with your environment before runn
 
 ## Experiments
 
+### Data Access
+The datasets used for these experiments can be downloaded from the following Google Drive link:
+[Download Data](https://drive.google.com/drive/folders/17rwMtEc5vwRKEjNolreUBL2Yk4OSTvr4?usp=sharing)
+
 ### Experiment 1: Synthetic MSS Data
 This experiment focuses on interpolating synthetic **Mean Sea Surface (MSS)** data using DRF. The synthetic data is used to evaluate DRF's performance in capturing underlying spatial patterns on a local scale, offering a controlled environment to test its interpolation accuracy.
 

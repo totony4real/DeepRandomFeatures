@@ -1,6 +1,6 @@
 data:
-  obs_datapath: '/home/wch/Gaussian-Process-Approximation/official_experiment/bin_df.pkl'
-  test_data_path: '/home/wch/Gaussian-Process-Approximation/official_experiment/test_loc.csv'
+  obs_datapath: 'path/to/exp2.pkl'
+  test_data_path: 'path/to/exp2_test_locs.csv'
 device: 'cuda:1'
 model:
   name: 'DeepSpatiotemporalGPNN'  # Options: 'DeepSpatiotemporalGPNN', 'DeepMaternRandomPhaseS2RFFNN'.....

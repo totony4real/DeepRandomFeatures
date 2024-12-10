@@ -1,6 +1,6 @@
 data:
-  file_path: '/home/wch/spherical_reg/Gaussian-Process-Approximation/notebooks/combined_data_clean_time.csv'  
-  test_data_path: '/home/wch/Gaussian-Process-Approximation/official_experiment/grid_dataset.pt'
+  file_path: 'path/to/exp3.csv'  
+  test_data_path: 'path/to/exp3_test_data.pt'
 device: 'cuda:1'
 model:
   name: 'DeepMaternRandomPhaseS2RFFNN'

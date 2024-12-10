@@ -1,6 +1,6 @@
 data:
-  zip_path: '/home/wch/Gaussian-Process-Approximation/official_experiment/MSS_data_experiment/mss_data.zip'
-  data_folder: '/home/wch/Gaussian-Process-Approximation/official_experiment/MSS_data_experiment/MSS'
+  zip_path: 'path/to/exp1.zip'
+  data_folder: 'path/to/folder' # Path to where you want your data to be unzipped and processed
 device: 'cuda:0'
 model:
   name: 'DeepSpatiotemporalGPNN'  # Options: 'DeepSpatiotemporalGPNN', 'DeepMaternRandomPhaseS2RFFNN'.....

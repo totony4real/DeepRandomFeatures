@@ -222,24 +222,26 @@ def create_datasets_and_loaders(
     return train_loader, val_loader
 
 
-def get_spherical_data(file_path,test_data_path ,device="cpu"):
+def get_spherical_data(file_path, test_data_path, device="cpu"):
     """
     Loads and preprocesses spherical data from a CSV file.
 
     Args:
         file_path (str): Path to the CSV file containing the data.
+        test_data_path (str): Path to the test data file.
         device (str): Device to load the data onto ('cpu' or 'cuda').
 
     Returns:
         train_dataset (TensorDataset): Training dataset.
-        val_dataset (TensorDataset): Validation dataset.
+        val_dataset_1 (TensorDataset): First validation dataset.
+        val_dataset_2 (TensorDataset): Second validation dataset.
+        test_dataset (TensorDataset): Test dataset.
         d_phi (float): Increment of longitude.
         d_theta (float): Increment of latitude.
     """
     df = pd.read_csv(file_path)
     df["lon_20_ku"] = np.deg2rad(df["lon_20_ku"])
     df["lat_20_ku"] = np.deg2rad(df["lat_20_ku"])
-    df["time"] = df["time"]
 
     spatial_input = torch.stack(
         (
@@ -259,32 +261,41 @@ def get_spherical_data(file_path,test_data_path ,device="cpu"):
     # spatial_input = spatial_input[::100]
     # temporal_input = temporal_input[::100]
     # observed_values = observed_values[::100]
-
     dataset = TensorDataset(spatial_input, temporal_input, observed_values)
-    train_size = int(0.8 * len(dataset))
-    val_size = len(dataset) - train_size
-    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+
+    # Calculate sizes for splits
+    train_size = int(0.7 * len(dataset))
+    val_size_1 = int(0.15 * len(dataset))
+    val_size_2 = len(dataset) - train_size - val_size_1  # Ensures total adds to 100%
+
+    # Split dataset into training, validation 1, and validation 2
+    train_dataset, val_dataset_1, val_dataset_2 = random_split(
+        dataset, [train_size, val_size_1, val_size_2]
+    )
+
+    # Calculate increments for spherical coordinates
     lons = spatial_input[:, 0]
     lats = spatial_input[:, 1]
     unique_lons = torch.unique(lons)
     unique_lats = torch.unique(lats)
-    if len(unique_lons) > 1:
-        d_phi = torch.abs(unique_lons[1] - unique_lons[0]).item()
-    else:
-        d_phi = 0.0
-    if len(unique_lats) > 1:
-        d_theta = torch.abs(unique_lats[1] - unique_lats[0]).item()
-    else:
-        d_theta = 0.0
-    
-    data = torch.load(test_data_path)
-    grid_spatial_input = data['spatial'].to(device, dtype=torch.float32)
-    grid_temporal_input = data['temporal'].to(device, dtype=torch.float32)
+    d_phi = (
+        torch.abs(unique_lons[1] - unique_lons[0]).item()
+        if len(unique_lons) > 1
+        else 0.0
+    )
+    d_theta = (
+        torch.abs(unique_lats[1] - unique_lats[0]).item()
+        if len(unique_lats) > 1
+        else 0.0
+    )
 
-    # Create the TensorDataset and DataLoader
+    # Load and prepare test data
+    data = torch.load(test_data_path)
+    grid_spatial_input = data["spatial"].to(device, dtype=torch.float32)
+    grid_temporal_input = data["temporal"].to(device, dtype=torch.float32)
     test_dataset = TensorDataset(grid_spatial_input, grid_temporal_input)
 
-    return train_dataset, val_dataset, test_dataset, d_phi, d_theta
+    return train_dataset, val_dataset_1, val_dataset_2, test_dataset, d_phi, d_theta
 
 
 def prepare_tensor_datasets_ABC(

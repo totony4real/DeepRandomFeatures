@@ -146,6 +146,7 @@ class SphericalBayesianOptimizer:
         model_class,
         train_data,
         val_data,
+        val_data2,
         test_data,
         num_layers,
         spatial_input_dim,
@@ -231,7 +232,7 @@ class SphericalBayesianOptimizer:
             all_val_values.append(val_values_batch)
         val_values = torch.cat(all_val_values, dim=0).to(self.device)
         huber_loss = F.huber_loss(
-            avg_predictions, val_values, reduction="mean", delta=1
+            avg_predictions, val_values, reduction="mean", delta=0.1
         )
         p_weight = self.p_weight
         final_loss = (1 - p_weight) * huber_loss.item() + p_weight * avg_reg_loss

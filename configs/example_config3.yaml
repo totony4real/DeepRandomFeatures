@@ -1,0 +1,40 @@
+data:
+  file_path: '/home/wch/spherical_reg/Gaussian-Process-Approximation/notebooks/combined_data_clean_time.csv'  
+  test_data_path: '/home/wch/Gaussian-Process-Approximation/official_experiment/grid_dataset.pt'
+device: 'cuda:1'
+model:
+  name: 'DeepMaternRandomPhaseS2RFFNN'
+  num_layers: 3
+  hidden_dim: 1000
+  bottleneck_dim: 128
+  output_dim: 1
+  spatial_layer_type: 'MaternRandomPhaseS2RFFLayer'
+  temporal_layer_type: 'Matern'
+  lon_lat_inputs: True
+  skip_connections: False
+  combine_type: 'concat'
+  kwargs:
+    nu: 1.5
+bayesian_optimization:
+  n_iterations: 15
+  initial_samples: 10
+  bounds:
+    - [1e-5, 0.1]  # spatial_lengthscale
+    - [1e-5, 10]   # temporal_lengthscale
+    - [1e-5, 1]    # amplitude
+    - [1e-5, 10]   # lengthscale2
+    - [1e-5, 1]    # amplitude2
+uq_method:
+  type: 'deep_ensemble'
+training:
+  num_epochs: 1
+  batch_size: 8000
+  learning_rate: 0.1
+  num_models: 5
+  p_weight: 0.95
+results:
+  csv_filename: '/home/wch/DeepRandomFeatures/results/spherical/hyperparams_nll_spherical4.csv'
+  predictions_filename: '/home/wch/DeepRandomFeatures/results/spherical/final_predictions_spherical4.pt'
+  variance_filename: '/home/wch/DeepRandomFeatures/results/spherical/final_variance_spherical4.pt'
+  plot_filename: '/home/wch/DeepRandomFeatures/results/spherical/final_variance_spherical4.png'
+  individual_predictions_filename: '/home/wch/DeepRandomFeatures/results/spherical/individual_final_predictions_spherical4.pt'

@@ -71,7 +71,7 @@ This experiment focuses on interpolating synthetic **Mean Sea Surface (MSS)** da
 
 **To run Experiment 1:**
 ```bash
-python example/experiment_1.py.py --config configs/example_config/example_config_exp1.yaml
+python example/experiment_1.py --config configs/example_config/example_config_exp1.yaml
 ```
 
 ### Experiment 2: ABC Freeboard Data

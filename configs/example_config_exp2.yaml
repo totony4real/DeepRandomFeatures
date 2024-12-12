@@ -1,7 +1,7 @@
 data:
-  obs_datapath: '/home/wch/arxiv_drf/DeepRandomFeatures/temporary_data/Experiment_data/exp2.pkl'
-  test_data_path: '/home/wch/arxiv_drf/DeepRandomFeatures/temporary_data/Experiment_data/exp2_test_loc.csv'
-device: ''
+  obs_datapath: '/path/to/exp2.pkl'
+  test_data_path: '/path/to/exp2_test_loc.csv'
+device: 'cuda'
 model:
   name: 'DeepSpatiotemporalGPNN' 
   num_layers: 6

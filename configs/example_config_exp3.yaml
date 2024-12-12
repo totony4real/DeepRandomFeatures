@@ -1,6 +1,6 @@
 data:
-  file_path: '/home/wch/arxiv_drf/DeepRandomFeatures/temporary_data/Experiment_data/exp3.csv'  
-  test_data_path: '/home/wch/arxiv_drf/DeepRandomFeatures/temporary_data/Experiment_data/exp3_test_data.pt'
+  file_path: '/path/to/exp3.csv'  
+  test_data_path: '/path/to/exp3_test_data.pt'
 device: 'cuda'
 model:
   name: 'DeepMaternRandomPhaseS2RFFNN'

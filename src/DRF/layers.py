@@ -171,7 +171,13 @@ class MaternRFFLayer(RFFLayer):
 
 class RandomPhaseFeatureMap:
     """
-    Random phase feature maps for spherical Matern GP
+    Random phase feature maps for spherical Matern GPs.
+
+    Args:
+        num_features (int): Number of random features to use.
+        nu (float): Smoothness parameter of the Matern kernel.
+        lengthscale (float): Lengthscal parameter of te Matern kernel.
+        num_levels (int, optional): Maximum level of spherical harmonics to use. Defaults to 24.
     """
 
     def __init__(self, num_features, nu, lengthscale, num_levels=24):
@@ -199,7 +205,15 @@ class RandomPhaseFeatureMap:
     @staticmethod
     def polyval(coeffs, x):
         """
-        Compute batched values of a polynomial.
+        Vectorised evaluation of N polynomials. a₀ⁿ + a₁ⁿ x¹ + ... + aₘⁿ xᵐ for n = 1, ..., N
+
+        Args:
+            coeffs (torch.Tensor): Coefficients of polynomials of degree M, expressed as a tensor. Shape (N, M).
+                                   Coefficients should be arranged in the order: [aₘ, ..., a₁, a₀].
+            x (torch.Tensor): Batch of values to evaluate polynomials. Shape (N, B).
+
+        Returns:
+            torch.Tensor: Result of evaluating N polynomials at B points. Shape (N, B).
         """
         assert len(coeffs) == len(x)
         curVal = torch.zeros_like(x)
@@ -218,15 +232,26 @@ class RandomPhaseFeatureMap:
 
     @staticmethod
     def gamma(x):
+        """Evaluate Gamma function."""
         return torch.exp(torch.lgamma(x))
 
     def c(self, l):
+        """Compute the constant c appearing in the addition theorem for spherical harmonics."""
         c = (2 * l + 1) / (4 * torch.pi)
         return c[:, None]
 
     def __call__(self, X):
+        """
+        Evaluate the feature maps at position X.
+
+        Args:
+            X (torch.Tensor): Batch of inputs (in Cartesian coordinates) to evaluate. Shape (B, 3).
+
+        Returns:
+            torch.Tensor: Result of evaluating N random feature maps at X. Shape (B, N).
+        """
         device = X.device
-        self.noise = self.noise.to(device)
+        self.noise = self.noise.to(device) # Shape (N, 3)
         self.levels = self.levels.to(device)
         self.gegenbauer_coeff_table = self.gegenbauer_coeff_table.to(device)
 
@@ -297,7 +322,7 @@ class MaternRandomPhaseS2RFFLayer(nn.Module):
         self.output_layer.weight.data.normal_(0, 1)
 
     def initialize_feature_map(self):
-
+        """Returns random feature maps corresponding to the specified layer configurations."""
         feature_map = RandomPhaseFeatureMap(
             num_features=self.hidden_dim, nu=self.nu, lengthscale=self.lengthscale
         )

@@ -321,9 +321,7 @@ def prepare_tensor_datasets_ABC(
             - spatial_X_test_torch (torch.Tensor): Normalized spatial test data tensor on the selected device.
             - temporal_X_test_torch (torch.Tensor): Temporal test data tensor on the selected device.
     """
-    bin_df = pd.read_pickle(
-        "/home/wch/Gaussian-Process-Approximation/official_experiment/bin_df1.pkl"
-    )
+    bin_df = pd.read_pickle(obs_data_path)
     print("training data has shape", bin_df.shape)
 
     spatial_X = bin_df[["x", "y"]].to_numpy()

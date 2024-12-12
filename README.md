@@ -52,16 +52,6 @@ The implementation is purely in Python, and this repository includes example scr
     ```bash
     pip install -r requirements.txt    
 
-### Example Script
-The main example script for **Experiment 1** (local interpolation of synthetic mean sea surface data) is available in:
-- [src/DRF/experiment_1.py](src/DRF/main.py)
-
-### Configuration File
-To run the example script, you can use the sample configuration file provided here:
-- [configs/example_config_exp1.yaml](/home/wch/DeepRandomFeatures/configs/example_config_exp1.yaml)
-
-Ensure that the configuration file paths align with your environment before running the script.
-
 ---
 
 ## Experiments
@@ -70,12 +60,42 @@ Ensure that the configuration file paths align with your environment before runn
 The datasets used for these experiments can be downloaded from the following Google Drive link:
 [Download Data](https://drive.google.com/drive/folders/17rwMtEc5vwRKEjNolreUBL2Yk4OSTvr4?usp=sharing)
 
+The Google Drive folder contains the following files:
+
+1. **exp1.zip**  
+   - Used in **Experiment 1**.  
+   - Configuration file reference: `zip_path` in `example_config1.yaml`.  
+   - Example path: `'path/to/exp1.zip'`.
+
+2. **exp2.pkl**  
+   - Used in **Experiment 2**.  
+   - Configuration file reference: `obs_datapath` in `example_config2.yaml`.  
+   - Example path: `'path/to/exp2.pkl'`.
+
+3. **exp2_test_loc.csv**  
+   - Used in **Experiment 2**.  
+   - Configuration file reference: `test_data_path` in `example_config2.yaml`.  
+   - Example path: `'path/to/exp2_test_loc.csv'`.
+
+4. **exp3.csv**  
+   - Used in **Experiment 3**.  
+   - Configuration file reference: `file_path` in `example_config3.yaml`.  
+   - Example path: `'path/to/exp3.csv'`.
+
+5. **exp3_test_data.pt**  
+   - Used in **Experiment 3**.  
+   - Configuration file reference: `test_data_path` in `example_config3.yaml`.  
+   - Example path: `'path/to/exp3_test_data.pt'`.
+
+Ensure that the files are placed in the appropriate paths as referenced in the respective configuration files before running the experiments.
+
+---
 ### Experiment 1: Synthetic MSS Data
 This experiment focuses on interpolating synthetic **Mean Sea Surface (MSS)** data using DRF. The synthetic data is used to evaluate DRF's performance in capturing underlying spatial patterns on a local scale, offering a controlled environment to test its interpolation accuracy.
 
 **To run Experiment 1:**
 ```bash
-python example/experiment_1.py --config configs/example_config/example_config_exp1.yaml
+python examples/experiment_1.py --config configs/example_config_exp1.yaml
 ```
 
 ### Experiment 2: ABC Freeboard Data
@@ -83,7 +103,7 @@ In this experiment, we use **ABC Freeboard data** to test DRF's ability to inter
 
 **To run Experiment 2:**
 ```bash
-python example/experiment_2.py --config configs/example_config/example_config_exp2.yaml
+python examples/experiment_2.py --config configs/example_config_exp2.yaml
 ```
 
 ### Experiment 3: SLA Data
@@ -91,7 +111,7 @@ This experiment applies DRF to **Sea Level Anomaly (SLA)** data, assessing its c
 
 **To run Experiment 3:**
 ```bash
-python example/experiment_3.py --config configs/example_config/example_config_exp3.yaml
+python examples/experiment_3.py --config configs/example_config_exp3.yaml
 ```
 ---
 

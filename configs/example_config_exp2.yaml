@@ -1,0 +1,35 @@
+data:
+  obs_datapath: '/home/wch/arxiv_drf/DeepRandomFeatures/temporary_data/Experiment_data/exp2.pkl'
+  test_data_path: '/home/wch/arxiv_drf/DeepRandomFeatures/temporary_data/Experiment_data/exp2_test_loc.csv'
+device: ''
+model:
+  name: 'DeepSpatiotemporalGPNN' 
+  num_layers: 6
+  hidden_dim: 1000
+  bottleneck_dim: 128
+  output_dim: 1
+  spatial_layer_type: 'Matern'  # Options: 'Matern', 'SquaredExponential', etc.....
+  temporal_layer_type: 'Matern'
+  kwargs: {}  # Additional arguments for the model if needed...
+bayesian_optimization:
+  n_iterations: 1
+  initial_samples: 1
+  bounds:
+    - [0.1, 10]  # spatial_lengthscale
+    - [0.1, 10]  # temporal_lengthscale
+    - [0.1, 1]   # amplitude
+  optimize_observation_noise: True  # Flag to enable/disable observation noise optimization
+  observation_noise_bounds: [0.00001, 0.01]
+  penalty_weight: 0.9
+uq_method:
+  type: 'deep_ensemble'  # Options: 'deep_ensemble', 'mc_dropout'.....
+training:
+  num_epochs: 1
+  batch_size: 1024
+  learning_rate: 0.001
+  num_models: 10
+results:
+  csv_filename: '/path/to/results.csv'
+  predictions_filename: '/path/to/final_predictions.pt'
+  variance_filename: '/path/to/final_variance.pt'
+  individual_predictions_filename: '/path/to/individual_final_predictions.pt'

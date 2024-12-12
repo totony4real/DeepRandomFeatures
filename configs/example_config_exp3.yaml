@@ -1,0 +1,40 @@
+data:
+  file_path: '/home/wch/arxiv_drf/DeepRandomFeatures/temporary_data/Experiment_data/exp3.csv'  
+  test_data_path: '/home/wch/arxiv_drf/DeepRandomFeatures/temporary_data/Experiment_data/exp3_test_data.pt'
+device: 'cuda'
+model:
+  name: 'DeepMaternRandomPhaseS2RFFNN'
+  num_layers: 3
+  hidden_dim: 1000
+  bottleneck_dim: 128
+  output_dim: 1
+  spatial_layer_type: 'MaternRandomPhaseS2RFFLayer'
+  temporal_layer_type: 'Matern'
+  lon_lat_inputs: True
+  skip_connections: False
+  combine_type: 'concat'
+  kwargs:
+    nu: 1.5
+bayesian_optimization:
+  n_iterations: 1
+  initial_samples: 1
+  bounds:
+    - [1e-5, 0.1]  # spatial_lengthscale
+    - [1e-5, 10]   # temporal_lengthscale
+    - [1e-5, 1]    # amplitude
+    - [1e-5, 10]   # lengthscale2
+    - [1e-5, 1]    # amplitude2
+uq_method:
+  type: 'deep_ensemble'
+training:
+  num_epochs: 1
+  batch_size: 8000
+  learning_rate: 0.1
+  num_models: 5
+  p_weight: 0.95
+results:
+  csv_filename: '/path/to/results.csv'
+  predictions_filename: '/path/to/final_predictions.pt'
+  variance_filename: '/path/to/final_variance.pt'
+  plot_filename: '/path/to/final_variance.png'
+  individual_predictions_filename: '/path/to/individual_final_predictions.pt'

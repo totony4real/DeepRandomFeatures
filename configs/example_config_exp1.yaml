@@ -1,0 +1,32 @@
+data:
+  zip_path: 'path/to/exp1.zip'
+  data_folder: 'path/to/folder'
+device: 'cuda'
+model:
+  name: 'DeepSpatiotemporalGPNN'  # Options: 'DeepSpatiotemporalGPNN', 'DeepMaternRandomPhaseS2RFFNN'.....
+  num_layers: 4
+  hidden_dim: 1000
+  bottleneck_dim: 128
+  output_dim: 1
+  spatial_layer_type: 'Matern'  # Options: 'Matern', 'SquaredExponential', etc.....
+  temporal_layer_type: 'Matern'
+  kwargs: {}  # Additional arguments for the model if needed...
+bayesian_optimization:
+  n_iterations: 1
+  initial_samples: 1
+  bounds:
+    - [0.1, 10]  # spatial_lengthscale
+    - [0.1, 10]  # temporal_lengthscale
+    - [0.1, 1]   # amplitude
+  observation_noise_bounds: [0.00001, 0.01]
+uq_method:
+  type: 'deep_ensemble'  # Options: 'deep_ensemble', 'mc_dropout'.....
+training:
+  num_epochs: 1
+  batch_size: 1024
+  learning_rate: 0.001
+  num_models: 10
+results:
+  csv_filename: '/path/to/results.csv'
+  predictions_filename: '/path/to/final_predictions_5.pt'
+  variance_filename: '/path/to/final_variance_5.pt'

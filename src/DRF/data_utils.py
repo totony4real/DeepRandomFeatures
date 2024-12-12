@@ -278,22 +278,15 @@ def get_spherical_data(file_path, test_data_path, device="cpu"):
         .reshape(-1, 1)
         .to(device)
     )
-    # spatial_input = spatial_input[::100]
-    # temporal_input = temporal_input[::100]
-    # observed_values = observed_values[::100]
+
     dataset = TensorDataset(spatial_input, temporal_input, observed_values)
 
-    # Calculate sizes for splits
     train_size = int(0.7 * len(dataset))
     val_size_1 = int(0.15 * len(dataset))
-    val_size_2 = len(dataset) - train_size - val_size_1  # Ensures total adds to 100%
-
-    # Split dataset into training, validation 1, and validation 2
+    val_size_2 = len(dataset) - train_size - val_size_1
     train_dataset, val_dataset_1, val_dataset_2 = random_split(
         dataset, [train_size, val_size_1, val_size_2]
     )
-
-    # Calculate increments for spherical coordinates
     lons = spatial_input[:, 0]
     lats = spatial_input[:, 1]
     unique_lons = torch.unique(lons)
@@ -309,7 +302,6 @@ def get_spherical_data(file_path, test_data_path, device="cpu"):
         else 0.0
     )
 
-    # Load and prepare test data
     data = torch.load(test_data_path)
     grid_spatial_input = data["spatial"].to(device, dtype=torch.float32)
     grid_temporal_input = data["temporal"].to(device, dtype=torch.float32)
@@ -370,7 +362,6 @@ def prepare_tensor_datasets_ABC(
     device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
     spatial_X_train_torch = normalized_spatial_tensor_x.to(device)
     temporal_X_train_torch = normalized_temporal_tensor_x.to(device)
-    # y_train_torch = normalized_tensor_y.to(device)
     y_train_torch = tensor_y
 
     pred_df = pd.read_csv(test_data_path)
@@ -382,8 +373,6 @@ def prepare_tensor_datasets_ABC(
     temporal_test_X = pred_df[["t"]].to_numpy()
     normalized_spatial_test_X = torch.Tensor(spatial_test_X / 50000)
     normalized_temporal_test_X = torch.Tensor(temporal_test_X)
-    # normalized_spatial_test_X = (torch.Tensor(spatial_test_X) - spatial_X_mean) / spatial_X_std
-    # normalized_temporal_test_X = (torch.Tensor(temporal_test_X) - temporal_X_mean) / temporal_X_std
     spatial_X_test_torch = normalized_spatial_test_X.to(device)
     temporal_X_test_torch = normalized_temporal_test_X.to(device)
 

@@ -52,6 +52,10 @@ The implementation is purely in Python, and this repository includes example scr
     ```bash
     pip install -r requirements.txt    
 
+4. Installs the DRF package from the locally cloned directory in an editable mode
+    ```bash
+    pip install -e ./  
+
 ---
 
 ## Experiments

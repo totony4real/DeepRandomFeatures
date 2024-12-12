@@ -4,7 +4,7 @@ import torch.optim as optim
 import torch.multiprocessing as mp
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from utils import functional_regularisation_S2_batched
+from DRF.utils import functional_regularisation_S2_batched
 from botorch.models import SingleTaskGP
 from botorch.fit import fit_gpytorch_model
 from botorch.acquisition import ExpectedImprovement

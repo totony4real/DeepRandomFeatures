@@ -1,7 +1,7 @@
 -e git+ssh://git@github.com/totony4real/DeepRandomFeatures.git@d709152035504a5ec21cbc51a5a5b3955769a642#egg=DRF
 
 Cartopy>=0.23.0
-botorch>=0.10.0
+botorch==0.10.0
 torch>=2.4.0
 gpytorch>=1.11
 pandas>=2.2.2
@@ -9,3 +9,5 @@ geometric_kernels>=0.2.1
 scipy>=1.14.1
 joblib>=1.4.2
 tqdm>=4.66.5
+h5py>=3.11.0
+tables

@@ -37,7 +37,7 @@ def load_data(data_folder):
         FileNotFoundError: If the expected data files are not found in the folder.
     """
     expected_file = os.path.join(
-        data_folder, "mss_data", "CryosatMSS-arco-2yr-140821_with_geoid_h.csv"
+        data_folder, "exp1", "CryosatMSS-arco-2yr-140821_with_geoid_h.csv"
     )
     if not os.path.exists(expected_file):
         raise FileNotFoundError(
@@ -46,10 +46,10 @@ def load_data(data_folder):
 
     gt_df = pd.read_csv(expected_file)
     hdf5_file_path = os.path.join(
-        data_folder, "mss_data", "along_track_sample_from_mss_ground_ABC.h5"
+        data_folder, "exp1", "along_track_sample_from_mss_ground_ABC.h5"
     )
     obs_data = pd.read_hdf(hdf5_file_path, "data")
-    test_locs = pd.read_csv(os.path.join(data_folder, "mss_data", "test_locs.csv"))
+    test_locs = pd.read_csv(os.path.join(data_folder, "exp1", "test_locs.csv"))
 
     return gt_df, obs_data, test_locs
 

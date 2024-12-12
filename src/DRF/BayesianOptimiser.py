@@ -4,9 +4,9 @@ from botorch.fit import fit_gpytorch_model
 from botorch.optim import optimize_acqf
 from botorch.acquisition import ExpectedImprovement
 from gpytorch.mlls import ExactMarginalLogLikelihood
-from uq_methods import DeepEnsemble
-from data_utils import create_datasets_and_loaders
-from utils import calculate_batch_nll
+from DRF.uq_methods import DeepEnsemble
+from DRF.data_utils import create_datasets_and_loaders
+from DRF.utils import calculate_batch_nll
 
 
 class BayesianOptimiser:

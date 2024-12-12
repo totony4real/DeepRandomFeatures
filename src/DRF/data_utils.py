@@ -14,13 +14,33 @@ def unzip_data(source_zip, target_folder):
         source_zip (str): Path to the source zip file.
         target_folder (str): Path to the target folder where data should be extracted.
     """
-    if not os.path.exists(target_folder):
+    required_files = [
+        os.path.join(
+            target_folder, "exp1", "CryosatMSS-arco-2yr-140821_with_geoid_h.csv"
+        ),
+        os.path.join(
+            target_folder, "exp1", "along_track_sample_from_mss_ground_ABC.h5"
+        ),
+        os.path.join(target_folder, "exp1", "test_locs.csv"),
+    ]
+
+    if os.path.exists(target_folder):
+        print(f"Target folder already exists: {target_folder}")
+        missing_files = [file for file in required_files if not os.path.exists(file)]
+        if missing_files:
+            print(f"Missing files detected: {missing_files}")
+            print(f"Re-extracting {source_zip} to {target_folder}")
+            with zipfile.ZipFile(source_zip, "r") as zip_ref:
+                zip_ref.extractall(target_folder)
+            print("Data re-unzipped.")
+        else:
+            print("All required files are present. Skipping extraction.")
+    else:
+        print(f"Target folder does not exist. Creating: {target_folder}")
         os.makedirs(target_folder, exist_ok=True)
         with zipfile.ZipFile(source_zip, "r") as zip_ref:
             zip_ref.extractall(target_folder)
         print("Data unzipped.")
-    else:
-        print("Data already unzipped.")
 
 
 def load_data(data_folder):

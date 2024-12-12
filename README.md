@@ -37,7 +37,7 @@ The implementation is purely in Python, and this repository includes example scr
 1. **Clone the Repository**
 
    ```bash
-   git clone https://github.com/totony4real/DeepRandomFeatures.git
+   git clone git@github.com:totony4real/DeepRandomFeatures.git
    cd DeepRandomFeatures
 
 2. **Create a Virtual Environment**

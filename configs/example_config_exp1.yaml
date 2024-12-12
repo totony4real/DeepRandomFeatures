@@ -1,6 +1,6 @@
 data:
   zip_path: 'path/to/exp1.zip'
-  data_folder: 'path/to/folder'
+  data_folder: 'path/to/folder' # Path to where you want your data to be unzipped and processed
 device: 'cuda'
 model:
   name: 'DeepSpatiotemporalGPNN'  # Options: 'DeepSpatiotemporalGPNN', 'DeepMaternRandomPhaseS2RFFNN'.....
@@ -28,5 +28,5 @@ training:
   num_models: 10
 results:
   csv_filename: '/path/to/results.csv'
-  predictions_filename: '/path/to/final_predictions_5.pt'
-  variance_filename: '/path/to/final_variance_5.pt'
+  predictions_filename: '/path/to/final_predictions.pt'
+  variance_filename: '/path/to/final_variance.pt'

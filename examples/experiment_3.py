@@ -32,13 +32,11 @@ if __name__ == "__main__":
     model_name = config["model"]["name"]
 
     if model_name == "DeepMaternRandomPhaseS2RFFNN":
-        # Spherical case
         file_path = config["data"]["file_path"]
         test_data_path = config["data"]["test_data_path"]
         train_dataset, val_dataset, val_dataset2, test_dataset, d_phi, d_theta = (
             get_spherical_data(file_path, test_data_path, device=device)
         )
-        print("now we have val2")
 
         def model_class(*args, **kwargs):
             return DeepMaternRandomPhaseS2RFFNN(*args, **kwargs)

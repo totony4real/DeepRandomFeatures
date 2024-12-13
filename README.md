@@ -1,8 +1,8 @@
 # Deep Random Features
 
-### Repository containing the official PyTorch implementation of the Deep Random Features for Scalable Interpolation of Spatiotemporal Data.
+%### Repository containing the official PyTorch implementation of the Deep Random Features for Scalable Interpolation of Spatiotemporal Data.
 
----
+%---
 
 ## Overview
 

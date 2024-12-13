@@ -100,7 +100,7 @@ This experiment focuses on interpolating synthetic **Mean Sea Surface (MSS)** da
 **To run Experiment 1:**
 ```bash
 python examples/experiment_1.py --config configs/example_config_exp1.yaml
-```
+``` 
 
 ### Experiment 2: ABC Freeboard Data
 In this experiment, we use **ABC Freeboard data** to test DRF's ability to interpolate satellite-derived freeboard measurements. This data helps evaluate DRF's effectiveness in real-life scenarios where the data is noisy.
@@ -117,6 +117,19 @@ This experiment applies DRF to **Sea Level Anomaly (SLA)** data, assessing its c
 ```bash
 python examples/experiment_3.py --config configs/example_config_exp3.yaml
 ```
+---
+### Results Plotting
+
+#### Experiment 1 and Experiment 2
+For **Experiment 1** and **Experiment 2**, the repository includes plotting notebooks located in the `plotting` folder. These scripts allow users to visualise the results obtained from the experiments, including comparisons with ground truth data where applicable.
+
+To use these plotting scripts:
+1. Navigate to the `plotting` folder in the repository.
+2. Run the relevant notebook for the corresponding experiment, ensuring you provide any required paths or configuration details.
+
+#### Experiment 3
+For **Experiment 3**, the plotting is automated. The experiment script saves the generated plots directly to the paths specified in the configuration file under the `results` section. Users can define the desired save locations by editing the corresponding fields in `configs/example_config_exp3.yaml`.
+
 ---
 
 ## Citation

@@ -5,7 +5,7 @@
 ---
 
 ## Overview
-This repository provides the official PyTorch implementation of the Deep Random Features (DRF) model as introduced in [insert link to the paper here].
+
 
 **Deep Random Features (DRF)** is a Bayesian deep learning framework designed for scalable interpolation of spatiotemporal data. By leveraging random feature expansions, DRF layers incorporate the inductive bias of stationary Gaussian Processes (GPs), supporting applications both on the **plane** and on the **sphere**. 
 

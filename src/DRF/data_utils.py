@@ -359,7 +359,7 @@ def prepare_tensor_datasets_ABC(
     Y_std = tensor_y.std()
     normalized_tensor_y = (tensor_y - Y_mean) / Y_std
 
-    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     spatial_X_train_torch = normalized_spatial_tensor_x.to(device)
     temporal_X_train_torch = normalized_temporal_tensor_x.to(device)
     y_train_torch = tensor_y

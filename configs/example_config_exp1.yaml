@@ -1,7 +1,7 @@
 data:
   zip_path: 'path/to/exp1.zip'
   data_folder: 'path/to/folder' # Path to where you want your data to be unzipped and processed
-device: 'cuda:0'
+device: 'cuda'
 model:
   name: 'DeepSpatiotemporalGPNN'  # Options: 'DeepSpatiotemporalGPNN', 'DeepMaternRandomPhaseS2RFFNN'.....
   num_layers: 4
@@ -12,8 +12,8 @@ model:
   temporal_layer_type: 'Matern'
   kwargs: {}  # Additional arguments for the model if needed...
 bayesian_optimization:
-  n_iterations: 10
-  initial_samples: 10
+  n_iterations: 1
+  initial_samples: 1
   bounds:
     - [0.1, 10]  # spatial_lengthscale
     - [0.1, 10]  # temporal_lengthscale
@@ -27,6 +27,6 @@ training:
   learning_rate: 0.001
   num_models: 10
 results:
-  csv_filename: '/home/wch/DeepRandomFeatures/results/hyperparams_nll_5.csv'
-  predictions_filename: '/home/wch/DeepRandomFeatures/results/final_predictions_5.pt'
-  variance_filename: '/home/wch/DeepRandomFeatures/results/final_variance_5.pt'
+  csv_filename: '/path/to/results.csv'
+  predictions_filename: '/path/to/final_predictions.pt'
+  variance_filename: '/path/to/final_variance.pt'

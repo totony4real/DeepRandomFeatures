@@ -1,5 +1,3 @@
--e git+ssh://git@github.com/totony4real/DeepRandomFeatures.git@d709152035504a5ec21cbc51a5a5b3955769a642#egg=DRF
-
 Cartopy>=0.23.0
 botorch==0.10.0
 torch>=2.4.0
@@ -9,4 +7,6 @@ geometric_kernels>=0.2.1
 scipy>=1.14.1
 joblib>=1.4.2
 tqdm>=4.66.5
-PyYAML>=5.1.2
+h5py>=3.11.0
+tables>=3.10.1 # Earlier version of tables is not compatible with numpy 2.x. If using tables<3.10.1, downgrade numpy to version 1.26.4.
+PyYAML

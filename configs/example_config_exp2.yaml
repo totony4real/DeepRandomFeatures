@@ -1,9 +1,9 @@
 data:
-  obs_datapath: 'path/to/exp2.pkl'
-  test_data_path: 'path/to/exp2_test_locs.csv'
-device: 'cuda:1'
+  obs_datapath: '/path/to/exp2.pkl'
+  test_data_path: '/path/to/exp2_test_loc.csv'
+device: 'cuda'
 model:
-  name: 'DeepSpatiotemporalGPNN'  # Options: 'DeepSpatiotemporalGPNN', 'DeepMaternRandomPhaseS2RFFNN'.....
+  name: 'DeepSpatiotemporalGPNN' 
   num_layers: 6
   hidden_dim: 1000
   bottleneck_dim: 128
@@ -12,8 +12,8 @@ model:
   temporal_layer_type: 'Matern'
   kwargs: {}  # Additional arguments for the model if needed...
 bayesian_optimization:
-  n_iterations: 10
-  initial_samples: 10
+  n_iterations: 1
+  initial_samples: 1
   bounds:
     - [0.1, 10]  # spatial_lengthscale
     - [0.1, 10]  # temporal_lengthscale
@@ -29,7 +29,7 @@ training:
   learning_rate: 0.001
   num_models: 10
 results:
-  csv_filename: '/home/wch/rebuttal/DeepRandomFeatures/rebuttal_results/2nd_rebuttal/hyperparams_nll_30.csv'
-  predictions_filename: '/home/wch/rebuttal/DeepRandomFeatures/rebuttal_results/2nd_rebuttal/final_predictions_30.pt'
-  variance_filename: '/home/wch/rebuttal/DeepRandomFeatures/rebuttal_results/2nd_rebuttal/final_variance_30.pt'
-  individual_predictions_filename: '/home/wch/rebuttal/DeepRandomFeatures/rebuttal_results/2nd_rebuttal/individual_final_predictions_spherical.pt'
+  csv_filename: '/path/to/results.csv'
+  predictions_filename: '/path/to/final_predictions.pt'
+  variance_filename: '/path/to/final_variance.pt'
+  individual_predictions_filename: '/path/to/individual_final_predictions.pt'

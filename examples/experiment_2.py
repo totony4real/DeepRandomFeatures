@@ -1,9 +1,9 @@
 import torch
 import yaml
 import argparse
-from BayesianOptimiser import BayesianOptimiser
-from data_utils import prepare_tensor_datasets_ABC
-from models import initialize_model
+from DRF.BayesianOptimiser import BayesianOptimiser
+from DRF.data_utils import prepare_tensor_datasets_ABC
+from DRF.models import initialize_model
 import pandas as pd
 
 
@@ -79,6 +79,7 @@ if __name__ == "__main__":
     processed_predictions = [
         process_prediction_set(pred[0]) for pred in extracted_predictions_and_params
     ]
+    print("Shape of processed predictions:", processed_predictions[0].shape)
     final_test_predictions = processed_predictions[0].mean(dim=0)
     var_final_pred = processed_predictions[0].var(dim=0)
 

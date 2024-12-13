@@ -1,7 +1,7 @@
 data:
-  file_path: 'path/to/exp3.csv'  
-  test_data_path: 'path/to/exp3_test_data.pt'
-device: 'cuda:1'
+  file_path: '/path/to/exp3.csv'  
+  test_data_path: '/path/to/exp3_test_data.pt'
+device: 'cuda'
 model:
   name: 'DeepMaternRandomPhaseS2RFFNN'
   num_layers: 3
@@ -16,8 +16,8 @@ model:
   kwargs:
     nu: 1.5
 bayesian_optimization:
-  n_iterations: 15
-  initial_samples: 10
+  n_iterations: 1
+  initial_samples: 1
   bounds:
     - [1e-5, 0.1]  # spatial_lengthscale
     - [1e-5, 10]   # temporal_lengthscale
@@ -33,8 +33,8 @@ training:
   num_models: 5
   p_weight: 0.95
 results:
-  csv_filename: '/home/wch/DeepRandomFeatures/results/spherical/hyperparams_nll_spherical4.csv'
-  predictions_filename: '/home/wch/DeepRandomFeatures/results/spherical/final_predictions_spherical4.pt'
-  variance_filename: '/home/wch/DeepRandomFeatures/results/spherical/final_variance_spherical4.pt'
-  plot_filename: '/home/wch/DeepRandomFeatures/results/spherical/final_variance_spherical4.png'
-  individual_predictions_filename: '/home/wch/DeepRandomFeatures/results/spherical/individual_final_predictions_spherical4.pt'
+  csv_filename: '/path/to/results.csv'
+  predictions_filename: '/path/to/final_predictions.pt'
+  variance_filename: '/path/to/final_variance.pt'
+  plot_filename: '/path/to/final_variance.png'
+  individual_predictions_filename: '/path/to/individual_final_predictions.pt'

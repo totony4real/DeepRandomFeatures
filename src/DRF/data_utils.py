@@ -14,13 +14,33 @@ def unzip_data(source_zip, target_folder):
         source_zip (str): Path to the source zip file.
         target_folder (str): Path to the target folder where data should be extracted.
     """
-    if not os.path.exists(target_folder):
+    required_files = [
+        os.path.join(
+            target_folder, "exp1", "CryosatMSS-arco-2yr-140821_with_geoid_h.csv"
+        ),
+        os.path.join(
+            target_folder, "exp1", "along_track_sample_from_mss_ground_ABC.h5"
+        ),
+        os.path.join(target_folder, "exp1", "test_locs.csv"),
+    ]
+
+    if os.path.exists(target_folder):
+        print(f"Target folder already exists: {target_folder}")
+        missing_files = [file for file in required_files if not os.path.exists(file)]
+        if missing_files:
+            print(f"Missing files detected: {missing_files}")
+            print(f"Re-extracting {source_zip} to {target_folder}")
+            with zipfile.ZipFile(source_zip, "r") as zip_ref:
+                zip_ref.extractall(target_folder)
+            print("Data re-unzipped.")
+        else:
+            print("All required files are present. Skipping extraction.")
+    else:
+        print(f"Target folder does not exist. Creating: {target_folder}")
         os.makedirs(target_folder, exist_ok=True)
         with zipfile.ZipFile(source_zip, "r") as zip_ref:
             zip_ref.extractall(target_folder)
         print("Data unzipped.")
-    else:
-        print("Data already unzipped.")
 
 
 def load_data(data_folder):
@@ -37,7 +57,7 @@ def load_data(data_folder):
         FileNotFoundError: If the expected data files are not found in the folder.
     """
     expected_file = os.path.join(
-        data_folder, "mss_data", "CryosatMSS-arco-2yr-140821_with_geoid_h.csv"
+        data_folder, "exp1", "CryosatMSS-arco-2yr-140821_with_geoid_h.csv"
     )
     if not os.path.exists(expected_file):
         raise FileNotFoundError(
@@ -46,10 +66,10 @@ def load_data(data_folder):
 
     gt_df = pd.read_csv(expected_file)
     hdf5_file_path = os.path.join(
-        data_folder, "mss_data", "along_track_sample_from_mss_ground_ABC.h5"
+        data_folder, "exp1", "along_track_sample_from_mss_ground_ABC.h5"
     )
     obs_data = pd.read_hdf(hdf5_file_path, "data")
-    test_locs = pd.read_csv(os.path.join(data_folder, "mss_data", "test_locs.csv"))
+    test_locs = pd.read_csv(os.path.join(data_folder, "exp1", "test_locs.csv"))
 
     return gt_df, obs_data, test_locs
 
@@ -258,22 +278,15 @@ def get_spherical_data(file_path, test_data_path, device="cpu"):
         .reshape(-1, 1)
         .to(device)
     )
-    # spatial_input = spatial_input[::100]
-    # temporal_input = temporal_input[::100]
-    # observed_values = observed_values[::100]
+
     dataset = TensorDataset(spatial_input, temporal_input, observed_values)
 
-    # Calculate sizes for splits
     train_size = int(0.7 * len(dataset))
     val_size_1 = int(0.15 * len(dataset))
-    val_size_2 = len(dataset) - train_size - val_size_1  # Ensures total adds to 100%
-
-    # Split dataset into training, validation 1, and validation 2
+    val_size_2 = len(dataset) - train_size - val_size_1
     train_dataset, val_dataset_1, val_dataset_2 = random_split(
         dataset, [train_size, val_size_1, val_size_2]
     )
-
-    # Calculate increments for spherical coordinates
     lons = spatial_input[:, 0]
     lats = spatial_input[:, 1]
     unique_lons = torch.unique(lons)
@@ -289,7 +302,6 @@ def get_spherical_data(file_path, test_data_path, device="cpu"):
         else 0.0
     )
 
-    # Load and prepare test data
     data = torch.load(test_data_path)
     grid_spatial_input = data["spatial"].to(device, dtype=torch.float32)
     grid_temporal_input = data["temporal"].to(device, dtype=torch.float32)
@@ -321,9 +333,7 @@ def prepare_tensor_datasets_ABC(
             - spatial_X_test_torch (torch.Tensor): Normalized spatial test data tensor on the selected device.
             - temporal_X_test_torch (torch.Tensor): Temporal test data tensor on the selected device.
     """
-    bin_df = pd.read_pickle(
-        "/home/wch/Gaussian-Process-Approximation/official_experiment/bin_df1.pkl"
-    )
+    bin_df = pd.read_pickle(obs_data_path)
     print("training data has shape", bin_df.shape)
 
     spatial_X = bin_df[["x", "y"]].to_numpy()
@@ -349,10 +359,9 @@ def prepare_tensor_datasets_ABC(
     Y_std = tensor_y.std()
     normalized_tensor_y = (tensor_y - Y_mean) / Y_std
 
-    device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     spatial_X_train_torch = normalized_spatial_tensor_x.to(device)
     temporal_X_train_torch = normalized_temporal_tensor_x.to(device)
-    # y_train_torch = normalized_tensor_y.to(device)
     y_train_torch = tensor_y
 
     pred_df = pd.read_csv(test_data_path)
@@ -364,8 +373,6 @@ def prepare_tensor_datasets_ABC(
     temporal_test_X = pred_df[["t"]].to_numpy()
     normalized_spatial_test_X = torch.Tensor(spatial_test_X / 50000)
     normalized_temporal_test_X = torch.Tensor(temporal_test_X)
-    # normalized_spatial_test_X = (torch.Tensor(spatial_test_X) - spatial_X_mean) / spatial_X_std
-    # normalized_temporal_test_X = (torch.Tensor(temporal_test_X) - temporal_X_mean) / temporal_X_std
     spatial_X_test_torch = normalized_spatial_test_X.to(device)
     temporal_X_test_torch = normalized_temporal_test_X.to(device)
 

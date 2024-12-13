@@ -153,6 +153,24 @@ if __name__ == "__main__":
         )
         ax.coastlines()
         ax.add_feature(cfeature.BORDERS, linestyle=":")
-        output_path_nn = config["results"]["plot_filename"]
+        output_path_nn = config["results"]["plot_mean_filename"]
         plt.savefig(output_path_nn, dpi=300)
+        plt.show()
+
+        fig, ax = plt.subplots(
+        subplot_kw={"projection": ccrs.PlateCarree(central_longitude=0)}
+        )
+        variance_plot = ax.imshow(
+            var_final_pred.reshape(_NUM_LONGS, _NUM_LATS).T,
+            origin="lower",
+            cmap="viridis",  
+            extent=[0, 360, -90, 90],
+            vmin=0,  
+            vmax=0.2,
+        )
+        ax.coastlines()
+        ax.add_feature(cfeature.BORDERS, linestyle=":")
+        output_path_variance = config["results"]["plot_variance_filename"]
+        plt.colorbar(variance_plot, ax=ax, orientation="horizontal", pad=0.05, label="Variance")
+        plt.savefig(output_path_variance, dpi=300)
         plt.show()

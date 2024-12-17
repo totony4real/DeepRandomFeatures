@@ -136,3 +136,15 @@ For **Experiment 3**, the plotting is automated. The experiment script saves the
 
 ## Citation
 If you use this repository for your research, please cite our paper:
+
+```
+@misc{chen2024deeprandomfeaturesscalable,
+      title={Deep Random Features for Scalable Interpolation of Spatiotemporal Data}, 
+      author={Weibin Chen and Azhir Mahmood and Michel Tsamados and So Takao},
+      year={2024},
+      eprint={2412.11350},
+      archivePrefix={arXiv},
+      primaryClass={cs.LG},
+      url={https://arxiv.org/abs/2412.11350}, 
+}
+```
